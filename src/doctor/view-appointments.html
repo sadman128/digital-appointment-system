@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>View Appointments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0a2342',
+                        'navy-blue': '#163d5c',
+                        'mid-blue': '#005885',
+                        'soft-blue': '#5a8fa3',
+                        'light-blue': '#b0cde0',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-light-blue h-screen w-screen overflow-hidden">
+
+<div class="flex h-full">
+
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+        <div>
+            <h2 class="text-3xl font-bold mb-10">Navigation</h2>
+            <nav class="space-y-4">
+                <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </button>
+            </nav>
+        </div>
+        <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+            <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="w-4/5 p-10 overflow-y-auto">
+        <h2 class="text-3xl font-bold text-deep-navy mb-6">🩺 My Appointments</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-soft-blue rounded-xl overflow-hidden text-left">
+                <thead class="bg-mid-blue text-white">
+                <tr>
+                    <th class="px-6 py-3">Patient</th>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Time</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Description</th>
+                    <th class="px-6 py-3">Phone</th>
+                </tr>
+                </thead>
+                <tbody id="appointmentsTable" class="text-navy-blue bg-white"></tbody>
+            </table>
+        </div>
+    </main>
+
+</div>
+
+<script>
+    const username = localStorage.getItem('username');
+    const tableBody = document.getElementById('appointmentsTable');
+
+    fetch(`http://localhost:3000/doctor/appointments?username=${username}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!Array.isArray(data) || data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-soft-blue">No appointments found.</td></tr>';
+                return;
+            }
+
+            // Sort by date (latest first)
+            data.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
+
+            data.forEach(app => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-light-blue transition";
+
+                row.innerHTML = `
+          <td class="px-6 py-4">${app.patient_name}</td>
+          <td class="px-6 py-4">${app.appointment_date}</td>
+          <td class="px-6 py-4">${app.appointment_time}</td>
+          <td class="px-6 py-4">
+            <select data-id="${app.id}" class="status-select px-3 py-1 rounded-xl border text-white ${
+                    app.status === 'completed' ? 'bg-green-500' :
+                        app.status === 'accepted' ? 'bg-blue-500' :
+                            app.status === 'cancelled' ? 'bg-red-500' :
+                                'bg-yellow-400'
+                }">
+              <option value="Pending" ${app.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="Accepted" ${app.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+              <option value="Completed" ${app.status === 'completed' ? 'selected' : ''}>Completed</option>
+              <option value="Cancelled" ${app.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+          <td class="px-6 py-4">${app.description || 'None'}</td>
+          <td class="px-6 py-4">${app.phone_number}</td>
+        `;
+                tableBody.appendChild(row);
+            });
+
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', async function () {
+                    const appointmentId = this.getAttribute('data-id');
+                    const status = this.value;
+                    try {
+                        const res = await fetch(`http://localhost:3000/doctor/appointments/${appointmentId}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status })
+                        });
+                        const result = await res.json();
+                        alert(result.message);
+                        location.reload(); // Reload to refresh the updated color
+                    } catch (err) {
+                        alert('Failed to update status.');
+                        console.error(err);
+                    }
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching appointments:', error);
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading appointments.</td></tr>';
+        });
+
+    function logout() {
+        localStorage.removeItem('username');
+        window.location.href = '../login.html';
+    }
+
+    lucide.createIcons();
+</script>
+</body>
+</html>

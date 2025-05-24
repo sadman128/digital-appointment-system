@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Book Appointment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-navy': '#0a2342',
+            'navy-blue': '#163d5c',
+            'mid-blue': '#005885',
+            'soft-blue': '#5a8fa3',
+            'light-blue': '#b0cde0',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-light-blue text-navy-blue h-screen overflow-hidden">
+
+<div class="flex h-full">
+
+  <!-- Sidebar -->
+  <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+    <div>
+      <h2 class="text-3xl font-bold mb-10">Navigation</h2>
+      <nav class="space-y-4">
+        <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+          <i data-lucide="calendar-plus" class="w-5 h-5 mr-3"></i> Dashboard
+        </button>
+      </nav>
+    </div>
+    <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+      <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="w-4/5 flex items-center justify-center p-10 overflow-auto">
+    <div class="bg-white rounded-2xl shadow-md p-10 w-full max-w-4xl">
+      <h1 class="text-3xl font-bold mb-8 text-center">Book Appointment</h1>
+
+      <form id="appointmentForm" class="space-y-6">
+        <div>
+          <label class="block mb-1 font-semibold">Doctor</label>
+          <select id="doctor" required class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue">
+            <option value="">Select Doctor</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block mb-1 font-semibold">Date</label>
+            <input type="date" id="date" required min="" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+          </div>
+
+          <div>
+            <label class="block mb-1 font-semibold">Time</label>
+            <select id="time" required class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue">
+              <option value="">Select Time Slot</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block mb-1 font-semibold">Describe your issue</label>
+          <textarea id="description" required placeholder="Describe your issue..." rows="4" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue"></textarea>
+        </div>
+
+        <button type="submit" class="bg-mid-blue text-white px-6 py-3 rounded-xl hover:bg-soft-blue transition w-full text-lg">
+          Book Appointment
+        </button>
+      </form>
+
+      <p id="message" class="text-center font-medium text-green-700 mt-4"></p>
+
+      <div class="text-center mt-4">
+        <button onclick="location.href='dashboard.html'" class="text-sm text-mid-blue underline hover:text-soft-blue">Back to Dashboard</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Phone Modal -->
+<div id="phoneModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden">
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-[90%] max-w-md">
+    <h3 class="text-xl font-semibold mb-4">Enter Phone Number</h3>
+    <input id="phoneInput" type="text" placeholder="+8801XXXXXXXXX"
+           class="w-full border border-soft-blue p-3 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+    <div class="flex justify-end gap-4">
+      <button onclick="submitPhone()" class="bg-mid-blue text-white px-4 py-2 rounded-xl hover:bg-soft-blue">Submit</button>
+      <button onclick="closeModal()" class="text-sm text-red-600 hover:underline">Cancel</button>
+    </div>
+    <p id="phoneError" class="text-red-600 mt-2 text-sm"></p>
+  </div>
+</div>
+
+<script>
+  const doctorSelect = document.getElementById('doctor');
+  const dateInput = document.getElementById('date');
+  const timeSelect = document.getElementById('time');
+  const message = document.getElementById('message');
+  const username = localStorage.getItem('username');
+
+  let appointmentData = {}; // Temporarily store data for modal use
+
+  if (!username) {
+    alert("You're not logged in.");
+    window.location.href = '../login.html';
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  dateInput.min = today;
+
+  fetch('/patient/doctors')
+          .then(res => res.json())
+          .then(data => {
+            data.forEach(doctor => {
+              const option = document.createElement('option');
+              option.value = doctor.username;
+              option.textContent = `${doctor.id}. ${doctor.name} - ${doctor.expertise}`;
+              doctorSelect.appendChild(option);
+            });
+          });
+
+  async function loadSlots() {
+    const doctor = doctorSelect.value;
+    const date = dateInput.value;
+    timeSelect.innerHTML = '<option value="">Select Time Slot</option>';
+    if (!doctor || !date) return;
+
+    const doctorRes = await fetch('/patient/doctor-info');
+    const doctorData = await doctorRes.json();
+    const selectedDoctor = doctorData.find(d => d.username === doctor);
+    if (!selectedDoctor) return;
+
+    const startTime = selectedDoctor.start_time;
+    const endTime = selectedDoctor.end_time;
+
+    const allSlots = [
+      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+      '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+      '20:00', '20:30', '21:00', '21:30', '22:00'
+    ];
+
+    const doctorSlots = allSlots.filter(slot => slot >= startTime && slot <= endTime);
+
+    const slotRes = await fetch(`/patient/available-slots?doctor=${doctor}&date=${date}`);
+    const availableSlots = await slotRes.json();
+
+    doctorSlots.forEach(slot => {
+      const option = document.createElement('option');
+      option.value = slot;
+      option.textContent = slot;
+      if (!availableSlots.includes(slot)) {
+        option.disabled = true;
+        option.textContent += " (Unavailable)";
+        option.classList.add('text-gray-400');
+      }
+      timeSelect.appendChild(option);
+    });
+  }
+
+  doctorSelect.addEventListener('change', loadSlots);
+  dateInput.addEventListener('change', loadSlots);
+
+  document.getElementById('appointmentForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    appointmentData = {
+      doctor: doctorSelect.value,
+      date: dateInput.value,
+      time: timeSelect.value,
+      description: document.getElementById('description').value
+    };
+
+    document.getElementById('phoneModal').classList.remove('hidden');
+  });
+
+  function closeModal() {
+    document.getElementById('phoneModal').classList.add('hidden');
+    document.getElementById('phoneError').textContent = '';
+  }
+
+  async function submitPhone() {
+    const phone = document.getElementById('phoneInput').value;
+    if (!/^\+880\d{10}$/.test(phone)) {
+      document.getElementById('phoneError').textContent = 'Phone must start with +880 and contain 13 digits total.';
+      return;
+    }
+
+    const res = await fetch('/patient/book-appointment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, ...appointmentData, phone })
+    });
+
+    const result = await res.json();
+    message.textContent = result.message;
+    closeModal();
+  }
+
+  function logout() {
+    localStorage.removeItem('username');
+    window.location.href = '../login.html';
+  }
+
+  lucide.createIcons();
+</script>
+</body>
+</html>

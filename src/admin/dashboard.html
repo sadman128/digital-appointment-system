@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-navy': '#0a2342',
+            'navy-blue': '#163d5c',
+            'mid-blue': '#005885',
+            'soft-blue': '#5a8fa3',
+            'light-blue': '#b0cde0',
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-light-blue h-screen w-screen overflow-hidden">
+
+<div class="flex h-full">
+  <!-- Sidebar -->
+  <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+    <div>
+      <h2 class="text-3xl font-bold mb-10">Dashboard</h2>
+      <nav class="space-y-4">
+        <button onclick="location.href='create-user.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+          <i data-lucide="user-plus" class="w-5 h-5 mr-3"></i> Create User
+        </button>
+        <button onclick="location.href='edit-user.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+          <i data-lucide="user-check" class="w-5 h-5 mr-3"></i> Edit User
+        </button>
+        <button onclick="location.href='appointments.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+          <i data-lucide="calendar-days" class="w-5 h-5 mr-3"></i> Manage Appointments
+        </button>
+      </nav>
+    </div>
+    <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+      <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="w-3/4 p-10 overflow-y-auto">
+    <div class="mb-10">
+      <h3 class="text-3xl font-bold text-deep-navy">Welcome, <span id="adminName">Admin Name</span></h3>
+      <p class="text-soft-blue mt-1">Phone: <span id="adminPhone">+88018XXXXXXXXX</span></p>
+    </div>
+
+    <section class="bg-white border border-soft-blue rounded-2xl p-6 shadow-lg">
+      <h4 class="text-2xl font-semibold text-navy-blue mb-4">📋 System Management</h4>
+      <div id="dashboardStats" class="grid grid-cols-2 gap-6 text-mid-blue">
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Total Doctors</h4>
+          <p id="totalDoctors" class="text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Total Patients</h4>
+          <p id="totalPatients" class="text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Completed Appointments</h4>
+          <p id="completedAppointments" class="text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Pending Appointments</h4>
+          <p id="pendingAppointments" class="text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Accepted Appointments</h4>
+          <p id="acceptedAppointments" class="text-2xl font-bold">-</p>
+        </div>
+        <div class="bg-light-blue p-4 rounded-xl shadow">
+          <h4 class="text-xl font-semibold">Cancelled Appointments</h4>
+          <p id="cancelledAppointments" class="text-2xl font-bold">-</p>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script>
+  lucide.createIcons();
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const username = localStorage.getItem('username');
+      if (!username) {
+        window.location.href = '../login.html';
+        return;
+      }
+
+      // Admin profile
+      const adminRes = await fetch(`/admin/profile?username=${encodeURIComponent(username)}`);
+      const adminData = await adminRes.json();
+      if (adminData) {
+        document.getElementById('adminName').textContent = adminData.name || 'Admin Name';
+        document.getElementById('adminPhone').textContent = adminData.contact || 'N/A';
+      }
+
+      // Fetch all users
+      const usersRes = await fetch('/admin/allusers');
+      const users = await usersRes.json();
+      const totalDoctors = users.filter(u => u.role === 'doctor').length;
+      const totalPatients = users.filter(u => u.role === 'patient').length;
+
+      document.getElementById('totalDoctors').textContent = totalDoctors;
+      document.getElementById('totalPatients').textContent = totalPatients;
+
+      // Fetch all appointments
+      const appointmentsRes = await fetch('/admin/appointments');
+      const appointments = await appointmentsRes.json();
+
+      let completed = 0, pending = 0, accepted = 0, canceled = 0;
+
+      appointments.forEach(app => {
+        const status = app.status?.toLowerCase();
+        if (status === 'completed') completed++;
+        else if (status === 'pending') pending++;
+        else if (status === 'accepted') accepted++;
+        else if (status === 'canceled') canceled++;
+      });
+
+      document.getElementById('completedAppointments').textContent = completed;
+      document.getElementById('pendingAppointments').textContent = pending;
+      document.getElementById('acceptedAppointments').textContent = accepted;
+      document.getElementById('cancelledAppointments').textContent = canceled;
+
+      lucide.createIcons();
+
+    } catch (err) {
+      console.error('Error loading admin dashboard stats:', err);
+    }
+  });
+
+  function logout() {
+    localStorage.removeItem('username');
+    window.location.href = '../login.html';
+  }
+</script>
+
+
+</body>
+</html>

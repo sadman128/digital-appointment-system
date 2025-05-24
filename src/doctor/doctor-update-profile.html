@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0a2342',
+                        'navy-blue': '#163d5c',
+                        'mid-blue': '#005885',
+                        'soft-blue': '#5a8fa3',
+                        'light-blue': '#b0cde0',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-light-blue text-navy-blue h-screen overflow-hidden">
+
+<div class="flex h-full">
+
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+        <div>
+            <h2 class="text-3xl font-bold mb-10">Navigation</h2>
+            <nav class="space-y-4">
+                <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </button>
+                <button onclick="openTelegramSetup()" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+                    <i data-lucide="message-circle" class="w-5 h-5 mr-3"></i> Telegram Setup
+                </button>
+                <button onclick="confirmUnbindTelegram()" class="flex items-center w-full p-3 rounded-xl hover:bg-red-500 transition">
+                    <i data-lucide="unlink" class="w-5 h-5 mr-3"></i> Unbind Telegram
+                </button>
+            </nav>
+        </div>
+        <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+            <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="w-4/5 flex items-center justify-center p-10 overflow-auto">
+        <div class="bg-white rounded-2xl shadow-md p-10 w-full max-w-4xl mt-10">
+            <h1 class="text-3xl font-bold mb-8 text-center">Update Profile</h1>
+
+            <form id="profileForm" class="space-y-6">
+                <div>
+                    <label class="block mb-1 font-semibold">Full Name</label>
+                    <input type="text" id="name" placeholder="e.g., Sadman Hossain Sajid" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">Contact Number</label>
+                    <input type="text" id="contact" placeholder="e.g., +88018XXXXXXXX" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">Email Address</label>
+                    <input type="email" id="email" placeholder="e.g., sajid1234@gmail.com" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">Start Hour</label>
+                    <select id="hour1" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue">
+                        <option value="">Select Start Time</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">End Hour</label>
+                    <select id="hour2" disabled class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue">
+                        <option value="">Select End Time</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">Education</label>
+                    <textarea id="education" placeholder="e.g., Dhaka Medical College" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue"></textarea>
+                </div>
+
+                <div>
+                    <label class="block mb-1 font-semibold">Expertise</label>
+                    <textarea id="expertise" placeholder="e.g., Nephrology" class="w-full border border-soft-blue p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-mid-blue"></textarea>
+                </div>
+
+                <div class="flex justify-between">
+                    <button type="submit" class="bg-mid-blue text-white px-6 py-3 rounded-xl hover:bg-soft-blue transition w-1/2 mr-2">Save</button>
+                    <button type="button" onclick="location.href='dashboard.html'" class="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition w-1/2">Back</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<!-- Telegram Setup Modal -->
+<div id="telegramModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl">
+        <h2 class="text-2xl font-bold mb-4 text-center">Telegram Setup Instructions</h2>
+        <ol class="list-decimal list-inside mb-4 space-y-1 text-gray-700">
+            <li>Create a telegram account</li>
+            <li>Search for <strong>@DigitalAppointmentBot</strong> or follow <a href="https://t.me/DigitalAppointmentBot" target="_blank" class="text-blue-600 underline">this link</a>.</li>
+            <li>Message <code>/setup</code></li>
+            <li>Submit the chat ID below</li>
+        </ol>
+
+        <input id="telegramChatId" type="text" placeholder="Enter Telegram Chat ID"
+               class="w-full border border-soft-blue p-3 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+
+        <div class="flex justify-end space-x-3">
+            <button onclick="submitTelegramChatId()" class="bg-mid-blue text-white px-5 py-2 rounded-xl hover:bg-soft-blue">Submit</button>
+            <button onclick="closeTelegramSetup()" class="bg-gray-500 text-white px-5 py-2 rounded-xl hover:bg-gray-600">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    const allSlots = [
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+        '20:00', '20:30', '21:00', '21:30', '22:00'
+    ];
+    const username = localStorage.getItem("username");
+
+    const startSelect = document.getElementById('hour1');
+    const endSelect = document.getElementById('hour2');
+
+    function populateStartTimes() {
+        allSlots.forEach(slot => {
+            const opt = document.createElement('option');
+            opt.value = slot;
+            opt.textContent = slot;
+            startSelect.appendChild(opt);
+        });
+    }
+
+    function updateEndTimes(startTime) {
+        endSelect.innerHTML = '<option value="">Select End Time</option>';
+        if (!startTime) {
+            endSelect.disabled = true;
+            return;
+        }
+        const startIndex = allSlots.indexOf(startTime);
+        allSlots.slice(startIndex + 1).forEach(slot => {
+            const opt = document.createElement('option');
+            opt.value = slot;
+            opt.textContent = slot;
+            endSelect.appendChild(opt);
+        });
+        endSelect.disabled = false;
+    }
+
+    startSelect.addEventListener('change', () => {
+        updateEndTimes(startSelect.value);
+    });
+
+    async function loadProfile() {
+        populateStartTimes();
+        const res = await fetch(`/doctor/profile?username=${username}`);
+        const data = await res.json();
+        if (data) {
+            document.getElementById("name").value = data.name || '';
+            document.getElementById("contact").value = data.contact_number || '';
+            document.getElementById("email").value = data.email || '';
+            document.getElementById("education").value = data.education || '';
+            document.getElementById("expertise").value = data.expertise || '';
+
+            if (data.start_time && allSlots.includes(data.start_time)) {
+                startSelect.value = data.start_time;
+                updateEndTimes(data.start_time);
+            }
+
+            if (data.end_time && allSlots.includes(data.end_time)) {
+                endSelect.value = data.end_time;
+            }
+        }
+    }
+
+    document.getElementById("profileForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const body = {
+            username,
+            name: document.getElementById("name").value.trim(),
+            contact: document.getElementById("contact").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            hour1: startSelect.value,
+            hour2: endSelect.value,
+            education: document.getElementById("education").value.trim(),
+            expertise: document.getElementById("expertise").value.trim()
+        };
+        const res = await fetch('/doctor/update-profile', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        alert(data.message || 'Profile updated');
+    });
+
+    // Fetch profile on load
+    window.onload = loadProfile;
+
+    function logout() {
+        localStorage.removeItem('username');
+        window.location.href = '../login.html';
+    }
+
+    lucide.createIcons();
+
+
+    function openTelegramSetup() {
+        document.getElementById('telegramModal').classList.remove('hidden');
+    }
+
+    function closeTelegramSetup() {
+        document.getElementById('telegramModal').classList.add('hidden');
+        document.getElementById('telegramChatId').value = '';
+    }
+
+    async function submitTelegramChatId() {
+        const chatId = document.getElementById('telegramChatId').value.trim();
+        if (!chatId) {
+            alert("Chat ID cannot be empty.");
+            return;
+        }
+
+        try {
+            const res = await fetch('/doctor/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, username })
+            });
+            const data = await res.json();
+            alert(data.message || "Telegram linked successfully!");
+        } catch (err) {
+            alert("Something went wrong. Please try again.");
+        }
+
+        closeTelegramSetup();
+    }
+    async function confirmUnbindTelegram() {
+        const confirmUnbind = confirm("Are you sure you want to unbind your Telegram account?");
+        if (!confirmUnbind) return;
+
+        try {
+            const res = await fetch(`/doctor/unbind?username=${username}`);
+            const data = await res.json();
+            alert(data.message || "Telegram unlinked successfully.");
+        } catch (err) {
+            console.error(err);
+            alert("Something went wrong. Please try again.");
+        }
+    }
+
+
+
+</script>
+</body>
+</html>

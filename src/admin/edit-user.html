@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8" />
+    <title>Edit User</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0a2342',
+                        'navy-blue': '#163d5c',
+                        'mid-blue': '#005885',
+                        'soft-blue': '#5a8fa3',
+                        'light-blue': '#b0cde0',
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-light-blue text-navy-blue h-screen overflow-hidden">
+
+<div class="flex h-full">
+
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+        <div>
+            <h2 class="text-3xl font-bold mb-10">Admin</h2>
+            <nav class="space-y-4">
+                <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </button>
+            </nav>
+        </div>
+        <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+            <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="w-4/5 flex items-center justify-center p-10 overflow-auto">
+
+        <div class="bg-white rounded-2xl shadow-md p-10 w-full max-w-xl space-y-8">
+
+            <h1 class="text-3xl font-bold text-center">Edit User</h1>
+
+            <!-- Username Input & Search -->
+            <div>
+                <label class="block font-semibold mb-2">Username</label>
+                <div class="flex space-x-4">
+                    <input id="usernameInput" type="text" placeholder="Enter username"
+                           class="flex-grow border border-soft-blue rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                    <button id="searchUserBtn"
+                            class="bg-mid-blue text-white px-6 rounded-xl hover:bg-soft-blue transition font-semibold">Search</button>
+                </div>
+                <p id="searchError" class="text-red-600 mt-2"></p>
+            </div>
+
+            <!-- User Details Form -->
+            <form id="userDetailsForm" class="space-y-6 hidden">
+
+                <div>
+                    <label class="block font-semibold mb-2">Name</label>
+                    <input type="text" id="nameInput" class="w-full border border-soft-blue rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-2">Contact Number</label>
+                    <input type="text" id="contactInput" class="w-full border border-soft-blue rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                </div>
+
+                <button type="submit"
+                        class="bg-mid-blue text-white w-full py-3 rounded-xl hover:bg-soft-blue transition font-semibold">
+                    Save Profile
+                </button>
+            </form>
+
+            <!-- Password Update Form -->
+            <form id="passwordForm" class="space-y-4 hidden">
+                <label class="block font-semibold mb-2">Update Password</label>
+                <input type="password" id="passwordInput" placeholder="New Password"
+                       class="w-full border border-soft-blue rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-mid-blue" />
+                <button type="button" id="updatePasswordBtn"
+                        class="bg-mid-blue text-white w-full py-3 rounded-xl hover:bg-soft-blue transition font-semibold">
+                    Update Password
+                </button>
+            </form>
+
+            <!-- Delete User -->
+            <div class="pt-6 border-t border-soft-blue hidden" id="deleteSection">
+                <button id="deleteUserBtn"
+                        class="bg-red-600 text-white w-full py-3 rounded-xl hover:bg-red-700 transition font-semibold">
+                    Delete User
+                </button>
+            </div>
+
+            <p id="message" class="text-center font-medium mt-4"></p>
+
+        </div>
+
+    </main>
+</div>
+
+<script>
+    const usernameInput = document.getElementById('usernameInput');
+    const searchUserBtn = document.getElementById('searchUserBtn');
+    const searchError = document.getElementById('searchError');
+    const userDetailsForm = document.getElementById('userDetailsForm');
+    const passwordForm = document.getElementById('passwordForm');
+    const deleteSection = document.getElementById('deleteSection');
+    const message = document.getElementById('message');
+
+    const nameInput = document.getElementById('nameInput');
+    const contactInput = document.getElementById('contactInput');
+    const passwordInput = document.getElementById('passwordInput');
+
+    let currentUsername = null;
+
+    async function fetchUser(username) {
+        // Replace with your actual GET user API or a temporary workaround here:
+        try {
+            const res = await fetch(`http://localhost:3000/admin/get-user?username=${encodeURIComponent(username)}`);
+            if (res.status === 404) {
+                searchError.textContent = 'User not found';
+                clearUserDetails();
+                return null;
+            }
+            if (!res.ok) throw new Error('Network response not ok');
+
+            const data = await res.json();
+            searchError.textContent = '';
+            return data; // expects { username, name, contact }
+        } catch (err) {
+            searchError.textContent = 'Failed to fetch user';
+            clearUserDetails();
+            return null;
+        }
+    }
+
+    function clearUserDetails() {
+        userDetailsForm.classList.add('hidden');
+        passwordForm.classList.add('hidden');
+        deleteSection.classList.add('hidden');
+        message.textContent = '';
+        nameInput.value = '';
+        contactInput.value = '';
+        passwordInput.value = '';
+        currentUsername = null;
+    }
+
+    searchUserBtn.addEventListener('click', async () => {
+        const username = usernameInput.value.trim();
+        if (!username) {
+            searchError.textContent = 'Please enter a username';
+            clearUserDetails();
+            return;
+        }
+        message.textContent = '';
+        const user = await fetchUser(username);
+        if (user) {
+            currentUsername = username;
+            nameInput.value = user.name || '';
+            contactInput.value = user.contact || '';
+            userDetailsForm.classList.remove('hidden');
+            passwordForm.classList.remove('hidden');
+            deleteSection.classList.remove('hidden');
+        }
+    });
+
+    // Update name and contact
+    userDetailsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUsername) return;
+
+        const newName = nameInput.value.trim();
+        const newContact = contactInput.value.trim();
+
+        try {
+            const res = await fetch('/admin/edit-user-name', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUsername, newName , newContact }),
+            });
+            if (!res.ok) throw new Error('Failed to update name');
+
+            message.textContent = 'Profile updated successfully';
+            message.className = 'text-center font-medium mt-4 text-green-700';
+        } catch (err) {
+            message.textContent = 'Error updating profile';
+            message.className = 'text-center font-medium mt-4 text-red-600';
+        }
+    });
+
+    // Password update with confirmation popup
+    document.getElementById('updatePasswordBtn').addEventListener('click', async () => {
+        if (!currentUsername) return;
+
+        const newPassword = passwordInput.value;
+        if (!newPassword) {
+            alert('Please enter a new password');
+            return;
+        }
+        if (!confirm('Are you sure you want to update the password?')) return;
+
+        try {
+            const res = await fetch('http://localhost:3000/admin/edit-user-password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUsername, newPassword }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                message.textContent = data.message || 'Password updated successfully';
+                message.className = 'text-center font-medium mt-4 text-green-700';
+                passwordInput.value = '';
+            } else {
+                throw new Error(data.message || 'Failed to update password');
+            }
+        } catch (err) {
+            message.textContent = err.message || 'Error updating password';
+            message.className = 'text-center font-medium mt-4 text-red-600';
+        }
+    });
+
+    // Delete user with confirmation
+    document.getElementById('deleteUserBtn').addEventListener('click', async () => {
+        if (!currentUsername) return;
+        if (!confirm(`Are you sure you want to delete user "${currentUsername}"? This action cannot be undone.`)) return;
+
+        try {
+            const res = await fetch('http://localhost:3000/admin/delete-user', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUsername }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                message.textContent = data.message || 'User deleted successfully';
+                message.className = 'text-center font-medium mt-4 text-green-700';
+                clearUserDetails();
+                usernameInput.value = '';
+            } else {
+                throw new Error(data.message || 'Failed to delete user');
+            }
+        } catch (err) {
+            message.textContent = err.message || 'Error deleting user';
+            message.className = 'text-center font-medium mt-4 text-red-600';
+        }
+    });
+
+    function logout() {
+        localStorage.removeItem('username');
+        window.location.href = '../login.html';
+    }
+
+    lucide.createIcons();
+</script>
+
+</body>
+</html>

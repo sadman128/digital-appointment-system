@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Patient Signup - Digital Appointment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0a2342',
+                        'navy-blue': '#163d5c',
+                        'mid-blue': '#005885',
+                        'soft-blue': '#5a8fa3',
+                        'light-blue': '#b0cde0',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-light-blue flex items-center justify-center px-4 py-10">
+
+<div class="w-full max-w-lg bg-white p-8 rounded-3xl shadow-2xl ring-1 ring-soft-blue">
+    <h2 class="text-3xl font-bold text-deep-navy text-center mb-4">Patient Signup</h2>
+    <p class="text-center text-soft-blue mb-6">Create your account to book appointments online</p>
+
+    <form id="signupForm" class="space-y-5">
+
+        <div>
+            <label for="username" class="block text-navy-blue font-medium">Username</label>
+            <input type="text" id="username" required
+                   class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none" />
+        </div>
+
+        <div>
+            <label for="name" class="block text-navy-blue font-medium">Full Name</label>
+            <input type="text" id="name" required
+                   class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none" />
+        </div>
+
+        <div>
+            <label for="contact" class="block text-navy-blue font-medium">Contact Number</label>
+            <input type="text" id="contact" placeholder="+880XXXXXXXXXX" required
+                   class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none" />
+        </div>
+
+        <div>
+            <label for="password" class="block text-navy-blue font-medium">Password</label>
+            <div class="relative">
+                <input type="password" id="password" required
+                       class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl pr-10 focus:ring-2 focus:ring-mid-blue focus:outline-none" />
+                <span class="absolute top-2.5 right-3 cursor-pointer text-soft-blue"
+                      onmousedown="showPassword('password')"
+                      onmouseup="hidePassword('password')"
+                      onmouseleave="hidePassword('password')">👁️</span>
+            </div>
+        </div>
+
+        <div>
+            <label for="confirmPassword" class="block text-navy-blue font-medium">Confirm Password</label>
+            <div class="relative">
+                <input type="password" id="confirmPassword" required
+                       class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl pr-10 focus:ring-2 focus:ring-mid-blue focus:outline-none" />
+                <span class="absolute top-2.5 right-3 cursor-pointer text-soft-blue"
+                      onmousedown="showPassword('confirmPassword')"
+                      onmouseup="hidePassword('confirmPassword')"
+                      onmouseleave="hidePassword('confirmPassword')">👁️</span>
+            </div>
+        </div>
+
+        <button type="submit"
+                class="w-full py-2 px-4 bg-mid-blue hover:bg-navy-blue text-white font-semibold rounded-xl transition shadow-md">
+            Sign Up
+        </button>
+
+        <p id="signupError" class="text-center text-sm text-red-500"></p>
+
+        <p class="text-center text-sm text-soft-blue">
+            Already have an account?
+            <a href="login.html" class="text-mid-blue font-semibold hover:underline">Back to Login</a>
+        </p>
+    </form>
+</div>
+
+<script>
+    function showPassword(id) {
+        document.getElementById(id).type = 'text';
+    }
+
+    function hidePassword(id) {
+        document.getElementById(id).type = 'password';
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+        const name = document.getElementById('name').value.trim();
+        const contact = document.getElementById('contact').value.trim();
+
+        if (password !== confirmPassword) {
+            alert('⚠️ Passwords do not match.');
+            return;
+        }
+
+        const body = { username, password, name, contact };
+
+        const res = await fetch('/patient/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            alert('Signup successful! Please login.');
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('signupError').textContent = data.message || 'Signup failed.';
+        }
+    });
+</script>
+
+</body>
+</html>

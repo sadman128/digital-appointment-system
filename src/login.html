@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Digital Appointment System - Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-navy': '#0a2342',
+            'navy-blue': '#163d5c',
+            'mid-blue': '#005885',
+            'soft-blue': '#5a8fa3',
+            'light-blue': '#b0cde0',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex font-sans">
+
+<!-- Left Panel: Login -->
+<div class="w-full md:w-1/2 flex items-center justify-center bg-light-blue px-8 py-12">
+  <div class="max-w-md w-full space-y-6 bg-white p-8 rounded-3xl shadow-2xl ring-1 ring-light-blue">
+    <div class="text-center">
+      <h2 class="text-3xl font-extrabold text-deep-navy">Digital Appointment System</h2>
+      <p class="text-sm text-soft-blue mt-1">Login to manage your health appointments</p>
+    </div>
+    <form id="loginForm" class="space-y-5">
+      <div>
+        <label for="username" class="block text-sm font-medium text-navy-blue">Username</label>
+        <input type="text" id="username" required
+               class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none transition"/>
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-navy-blue">Password</label>
+        <input type="password" id="password" required
+               class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none transition"/>
+      </div>
+      <div>
+        <label for="role" class="block text-sm font-medium text-navy-blue">Role</label>
+        <select id="role" required
+                class="mt-1 w-full px-4 py-2 border border-soft-blue rounded-xl focus:ring-2 focus:ring-mid-blue focus:outline-none transition">
+          <option value="patient">Patient</option>
+          <option value="doctor">Doctor</option>
+          <option value="admin">Admin</option>
+
+        </select>
+      </div>
+      <button type="submit"
+              class="w-full py-2 px-4 bg-mid-blue hover:bg-navy-blue text-white font-semibold rounded-xl transition shadow-md">Login</button>
+      <p id="error" class="text-sm text-red-500 text-center mt-2"></p>
+    </form>
+    <p class="text-sm text-center text-soft-blue">Don’t have an account?
+      <a href="signup.html" class="text-mid-blue font-semibold hover:underline">Sign up as a patient</a>
+    </p>
+  </div>
+</div>
+
+<!-- Right Panel: Background Image with Mask and Stats -->
+<div class="hidden md:flex w-1/2 relative">
+  <img src="https://i.imgur.com/2Eb5quF.jpeg" alt="Hospital Background"
+       class="object-cover w-full h-full" />
+  <div class="absolute inset-0 bg-deep-navy bg-opacity-70 flex flex-col items-center justify-center text-white text-center px-6">
+    <h1 class="text-4xl font-bold mb-6">Digital Appointment System</h1>
+    <div class="flex gap-10">
+      <div>
+        <p class="text-2xl font-bold">25,000+</p>
+        <p class="text-sm">Patients Served</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">800+</p>
+        <p class="text-sm">Active Doctors</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold">15 Years</p>
+        <p class="text-sm">Healthcare Experience</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

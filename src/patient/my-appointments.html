@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Appointments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-navy': '#0a2342',
+            'navy-blue': '#163d5c',
+            'mid-blue': '#005885',
+            'soft-blue': '#5a8fa3',
+            'light-blue': '#b0cde0',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-light-blue text-navy-blue h-screen overflow-hidden">
+
+<div class="flex h-full">
+  <!-- Sidebar -->
+  <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+    <div>
+      <h2 class="text-3xl font-bold mb-10">Navigation</h2>
+      <nav class="space-y-4">
+        <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+          <i data-lucide="calendar-plus" class="w-5 h-5 mr-3"></i> Dashboard
+        </button>
+      </nav>
+    </div>
+    <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+      <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="w-4/5 p-8 overflow-y-auto">
+    <div class="mb-6 flex justify-between items-center">
+      <h1 class="text-3xl font-bold">My Appointments</h1>
+    </div>
+
+    <div id="appointmentsList" class="flex flex-col gap-4">
+      <!-- Appointments will be injected here -->
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const username = localStorage.getItem('username');
+
+  if (!username) {
+    alert("You're not logged in.");
+    window.location.href = '../login.html';
+  }
+
+  function logout() {
+    localStorage.removeItem('username');
+    window.location.href = '../login.html';
+  }
+
+  function getStatusColor(status) {
+    switch (status.toLowerCase()) {
+      case 'complete': return 'bg-green-100 text-green-800';
+      case 'accepted': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  async function fetchAppointments() {
+    try {
+      const response = await fetch(`/patient/my-appointments?username=${username}`);
+      const data = await response.json();
+
+      const container = document.getElementById('appointmentsList');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = "text-center text-gray-600 py-10";
+        empty.textContent = "No appointments found.";
+        container.appendChild(empty);
+        return;
+      }
+
+      data.forEach(app => {
+        const statusClass = getStatusColor(app.status);
+
+        const card = document.createElement('div');
+        card.className = "flex bg-white border border-soft-blue rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition w-full";
+
+        card.innerHTML = `
+            <div class="flex-shrink-0 w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center mt-1">
+              <i class="w-6 h-6 text-mid-blue" data-lucide="calendar-check"></i>
+            </div>
+            <div class="ml-4 flex-1">
+              <h3 class="text-xl font-semibold text-mid-blue mb-2">${app.doctor_name}</h3>
+              <div class="grid grid-cols-3 gap-x-4 gap-y-1 text-[15px]">
+                <p><strong>Date:</strong> ${app.appointment_date.split('T')[0]}</p>
+                <p><strong>Time:</strong> ${app.appointment_time}</p>
+                <p>
+                  <strong>Status:</strong>
+                  <span class="inline-block px-3 py-1 rounded-full text-sm font-medium ${statusClass}">
+                    ${app.status}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div class="ml-4 flex items-center min-w-[100px] justify-end">
+                ${
+                app.status.toLowerCase() === 'pending'
+                        ? `<button onclick="alert('Please contact an admin to cancel this appointment.')"
+                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm">
+                 Cancel
+                </button>`
+                        : ''
+              }
+            </div>
+
+          `;
+
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
+    }
+  }
+
+  window.onload = fetchAppointments;
+</script>
+
+</body>
+</html>

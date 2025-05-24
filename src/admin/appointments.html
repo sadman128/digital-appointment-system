@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Manage Appointments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0a2342',
+                        'navy-blue': '#163d5c',
+                        'mid-blue': '#005885',
+                        'soft-blue': '#5a8fa3',
+                        'light-blue': '#b0cde0',
+                        'booked': '#d3d3d3',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-light-blue h-screen w-screen overflow-hidden">
+
+<div class="flex h-full">
+
+    <!-- Sidebar -->
+    <aside class="w-1/5 bg-deep-navy text-white p-8 flex flex-col justify-between">
+        <div>
+            <h2 class="text-3xl font-bold mb-10">Admin Panel</h2>
+            <nav class="space-y-4">
+                <button onclick="location.href='dashboard.html'" class="flex items-center w-full p-3 rounded-xl hover:bg-mid-blue transition">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </button>
+            </nav>
+        </div>
+        <button onclick="logout()" class="flex items-center w-full p-3 rounded-xl bg-red-600 hover:bg-red-700 transition">
+            <i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="w-4/5 p-10 overflow-y-auto">
+        <h2 class="text-3xl font-bold text-deep-navy mb-6">🗓️ All Appointments</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-soft-blue rounded-xl overflow-hidden text-left">
+                <thead class="bg-mid-blue text-white">
+                <tr>
+                    <th class="px-6 py-3">ID</th>
+                    <th class="px-6 py-3">Doctor</th>
+                    <th class="px-6 py-3">Patient</th>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Time</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Action</th>
+                </tr>
+                </thead>
+                <tbody id="appointmentsTable" class="text-navy-blue bg-white"></tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+    const tableBody = document.getElementById('appointmentsTable');
+    const allSlots = [
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+        '20:00', '20:30', '21:00', '21:30', '22:00'
+    ];
+
+    async function loadAppointments() {
+        try {
+            const response = await fetch('/admin/appointments');
+            let appointments = await response.json();
+
+            if (!Array.isArray(appointments) || appointments.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-soft-blue">No appointments found.</td></tr>';
+                return;
+            }
+
+            // Sort by latest first
+            appointments.sort((a, b) => {
+                const dateA = new Date(`${a.appointment_date}T${a.appointment_time}`);
+                const dateB = new Date(`${b.appointment_date}T${b.appointment_time}`);
+                return dateB - dateA;
+            });
+
+            for (const app of appointments) {
+                const booked = await fetch(`/admin/booked-slots?date=${app.appointment_date}&doctor=${app.doctor_username}`)
+                    .then(res => res.json())
+                    .then(data => data.map(t => t.slice(0, 5)))
+                    .catch(() => []);
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-light-blue transition";
+                row.setAttribute('data-id', app.id);
+
+                const slotOptions = (slots, currentTime) => slots.map(slot => {
+                    const isCurrentSlot = slot === currentTime;
+                    const isBooked = booked.includes(slot) && !isCurrentSlot;
+                    return `<option value="${slot}" ${isCurrentSlot ? 'selected' : ''} ${isBooked ? 'style="background-color:#d3d3d3;"' : ''}>${slot}</option>`;
+                }).join('');
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">${app.id}</td>
+                    <td class="px-6 py-4 doctor" data-doctor="${app.doctor_username}">${app.doctor_username}</td>
+                    <td class="px-6 py-4">${app.patient_username}</td>
+                    <td class="px-6 py-4">
+                        <input type="date" value="${app.appointment_date}" class="date-input border p-1 rounded w-36" data-id="${app.id}">
+                    </td>
+                    <td class="px-6 py-4">
+                        <select class="time-select border p-1 rounded w-32" data-id="${app.id}">
+                            ${slotOptions(allSlots, app.appointment_time.slice(0, 5))}
+                        </select>
+                    </td>
+                    <td class="px-6 py-4">
+                        <select class="status-select border p-1 rounded w-32" data-id="${app.id}">
+                            <option value="Pending" ${app.status === 'pending' ? 'selected' : ''}>pending</option>
+                            <option value="Accepted" ${app.status === 'accepted' ? 'selected' : ''}>accepted</option>
+                            <option value="Completed" ${app.status === 'completed' ? 'selected' : ''}>completed</option>
+                            <option value="Cancelled" ${app.status === 'canceled' ? 'selected' : ''}>canceled</option>
+                        </select>
+                    </td>
+                    <td class="px-6 py-4">
+                        <button class="save-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded" data-id="${app.id}">Save</button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            }
+
+            // Attach event listeners to date inputs
+            document.querySelectorAll('.date-input').forEach(input => {
+                input.addEventListener('change', async () => {
+                    const id = input.getAttribute('data-id');
+                    const newDate = input.value;
+                    const doctor = document.querySelector(`tr[data-id="${id}"] .doctor`).getAttribute('data-doctor');
+                    const timeSelect = document.querySelector(`.time-select[data-id="${id}"]`);
+                    const currentTime = timeSelect.value;
+
+                    const booked = await fetch(`/admin/booked-slots?date=${newDate}&doctor=${doctor}`)
+                        .then(res => res.json())
+                        .then(data => data.map(t => t.slice(0, 5)))
+                        .catch(() => []);
+
+                    timeSelect.innerHTML = allSlots.map(slot => {
+                        const isCurrentSlot = slot === currentTime;
+                        const isBooked = booked.includes(slot) && !isCurrentSlot;
+                        return `<option value="${slot}" ${isCurrentSlot ? 'selected' : ''} ${isBooked ? 'style="background-color:#d3d3d3;"' : ''}>${slot}</option>`;
+                    }).join('');
+                });
+            });
+
+            // Save button logic
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    const date = document.querySelector(`.date-input[data-id="${id}"]`).value;
+                    const time = document.querySelector(`.time-select[data-id="${id}"]`).value;
+                    const status = document.querySelector(`.status-select[data-id="${id}"]`).value;
+
+                    try {
+                        const res = await fetch('/admin/edit-appointment', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, date, time, status })
+                        });
+
+                        const result = await res.json();
+                        alert(result.message);
+                        location.reload();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Failed to update appointment.');
+                    }
+                });
+            });
+
+        } catch (err) {
+            console.error('Error:', err);
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Error loading appointments.</td></tr>';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('username');
+        window.location.href = '../login.html';
+    }
+
+    lucide.createIcons();
+    loadAppointments();
+</script>
+
+
+
+</body>
+</html>
